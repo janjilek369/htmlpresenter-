@@ -572,12 +572,6 @@ document.getElementById('btn-theme').addEventListener('click', async () => {
   }
 });
 
-// ─── Export (stub — wired in KROK 4) ─────────────────────────────────────────
-
-document.getElementById('btn-export').addEventListener('click', () => {
-  console.log(`${LOG} export HTML — coming in KROK 4`);
-});
-
 // ─── Keyboard shortcuts in presenter window ───────────────────────────────────
 
 document.addEventListener('keydown', (event) => {
