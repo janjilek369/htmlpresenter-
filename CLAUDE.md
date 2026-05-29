@@ -15,7 +15,8 @@ HTMLpresenter je Chrome extension, která přidává presenter view k libovolné
 - **Manifest V3** (povinné, V2 už Chrome nepřijímá)
 - **Vanilla JavaScript (ES2023)** — žádný framework, žádné build tools
 - **HTML + CSS** pro presenter UI
-- **chrome.storage.local** pro ukládání edits poznámek (per-presentation klíč)
+- **chrome.storage.local** — UI preference presenteru (téma: dark/light)
+- **chrome.storage.session** — session recovery (pozice slidu + live editace poznámek, přežije náhodné zavření okna, maže se se zavřením Chrome)
 - **chrome.windows API** pro správu dvou oken
 - **chrome.runtime messaging** pro komunikaci mezi okny přes background service worker
 
@@ -28,14 +29,16 @@ HTMLpresenter je Chrome extension, která přidává presenter view k libovolné
 ```
 htmlpresenter/
 ├── manifest.json              — Manifest V3 konfigurace
-├── background.js              — Service worker (state, messaging)
+├── background.js              — Service worker (state, messaging, session recovery)
 ├── content.js                 — Injected do prezentace, detekce slidů, ovládání
 ├── content.css                — Styly pro audience okno (skrytí ne-aktivních slidů)
 ├── presenter/
-│   ├── presenter.html         — Presenter view HTML
-│   ├── presenter.css          — Glassmorphism design
-│   ├── presenter.js           — UI logika presenter okna
-│   └── fonts/                 — Geist font soubory (self-hosted, viz DESIGN.md)
+│   ├── presenter.html         — Presenter view HTML (toolbar, recovery dialog, thumbnails)
+│   ├── presenter.css          — Glassmorphism design, dark + light theme tokens
+│   ├── presenter.js           — UI logika: timer, editace, session, téma, navigace
+│   └── fonts/
+│       ├── Geist-Variable.woff2      — Self-hosted Geist sans (Vercel)
+│       └── GeistMono-Variable.woff2  — Self-hosted Geist mono
 ├── popup/
 │   ├── popup.html             — Malý popup po kliknutí na ikonu extension
 │   ├── popup.css
@@ -45,11 +48,48 @@ htmlpresenter/
 │   ├── icon48.png
 │   └── icon128.png            — Stačí pro lokální use, store ikony až později
 ├── test-presentations/        — Testovací HTML prezentace pro vývoj
-│   ├── minimal.html
-│   ├── reveal-js.html
-│   └── ai-generated.html
-└── README.md                  — Krátké info pro budoucí (instalace, reload)
+│   ├── minimal.html           — 3 slidy, JSON notes block (primary formát)
+│   └── test-fallback.html     — Stejné slidy, <aside class="notes"> (fallback test)
+└── README.md                  — Instalace, usage, tech stack
 ```
+
+---
+
+## Implementované funkce (v0.1.0)
+
+Co aktuálně funguje — pro orientaci při pokračování vývoje:
+
+**Detekce slidů a poznámek**
+- Auto-detekce podle 5 selektorů (Reveal.js, `section.slide`, `div.slide`, `section[data-slide]`, `body > section`)
+- Poznámky: JSON block `<script type="application/json" id="presenter-notes">` jako primary formát, `<aside class="notes">` jako fallback, `data-notes` attr jako poslední záchrana
+- `<aside class="notes">` se vždy odstraní z DOM (audience nevidí)
+
+**Presenter window**
+- Glassmorphism UI: glasspanely, Geist font, tmavý background s ambient gradienty
+- Live náhledy slidů ve footeru: iframe `srcdoc`, 1280×720 skalované `Math.min(w/1280, h/720)` (contain mode)
+- Slide counter, timer s pause/resume (long-press 1 s = reset)
+- Ovládání šipkami, Esc pro ukončení
+- Otevírá se vždy VPředu (focused: true + drawAttention + 80ms guard)
+
+**Editace poznámek (live, in-session)**
+- Tlačítko Edit → `contenteditable`, toolbar s B/I tlačítky
+- Klávesové zkratky: Cmd/Ctrl+B, Cmd/Ctrl+I, Esc pro cancel
+- Uloženo v paměti jako HTML (`sessionEdits` objekt, per slide index)
+- Auto-save při přechodu na jiný slide
+
+**Session recovery**
+- Ukládá se do `chrome.storage.session` (klíč `session:<url>`)
+- Ukládá: `currentSlideIndex`, `editedNotes`, `slideCount`, `timestamp`
+- Throttlováno: debounce 2 s
+- Při startu presenteru: pokud existuje záznam < 2 h → dialog "Continue / Start fresh"
+- Intentional Esc → smaže session; zavření křížkem → session přežívá
+- Background rozlišuje accidental vs intentional přes `state.intentionalStop` flag
+
+**Dark/light theme**
+- Přepínač v headeru (Phosphor sun/moon SVG ikona)
+- Light theme: `[data-theme="light"]` na `<html>`, přepisuje CSS proměnné
+- Persistence: `chrome.storage.local`, klíč `presenter-theme`
+- Smooth transition 300 ms na color, background-color, border-color, box-shadow
 
 ---
 
@@ -112,10 +152,10 @@ Když pracuješ na konkrétní části:
 - Spotlight / laser pointer
 - Jump to slide číslem
 - Follow link pro vzdálené diváky
-- Quick edit slidu z presenter view
-- Světlý mode
+- Quick edit slidu z presenter view (jen poznámky, ne obsah slidu)
 - Vlastní konfigurace selektoru slidů (auto-detekce musí stačit)
-- Cloud sync poznámek
+- Cloud sync poznámek (session edits jsou in-memory + session storage, ne trvalé)
+- Export HTML s upravenými poznámkami (stub, přijde v KROK 4)
 - Chrome Web Store publikace
 - Privacy policy, store assets, marketing copy
 - Lokalizace (jen angličtina)
