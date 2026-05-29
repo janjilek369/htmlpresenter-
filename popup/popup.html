@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>HTMLpresenter</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+
+<div class="popup">
+
+  <div class="popup__logo">
+    <div class="popup__logo-dot"></div>
+    HTMLpresenter
+  </div>
+
+  <div class="popup__divider"></div>
+
+  <!-- State is toggled by popup.js based on what content.js reports -->
+  <div class="popup__body" id="popup-body">
+
+    <!-- STATE 1: No presentation detected (default for skeleton) -->
+    <div id="state-no-presentation">
+      <p class="popup__status">
+        No presentation detected on this page.
+      </p>
+      <p class="popup__status">
+        Open an HTML file with
+        <strong>&lt;section class="slide"&gt;</strong>
+        structure to start.
+      </p>
+    </div>
+
+    <!-- STATE 2: Presentation detected -->
+    <div id="state-detected" style="display:none;">
+      <p class="popup__status popup__status--success">
+        ✓ Presentation detected
+      </p>
+      <p class="popup__slide-count" id="slide-count-text">— slides found</p>
+      <button class="popup__btn" id="btn-start">Start Presenter</button>
+      <p class="popup__tip">Tip: Press <strong>P</strong> anywhere on the page</p>
+    </div>
+
+    <!-- STATE 3: Presenter mode active -->
+    <div id="state-active" style="display:none;">
+      <p class="popup__status popup__status--active">
+        ● Presenter active
+      </p>
+      <p class="popup__slide-count" id="active-slide-text">Slide — / —</p>
+      <button class="popup__btn popup__btn--stop" id="btn-stop">Stop Presenter</button>
+    </div>
+
+  </div>
+
+</div>
+
+<script src="popup.js"></script>
+</body>
+</html>

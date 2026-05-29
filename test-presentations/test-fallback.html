@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AI Tools for Teachers — aside fallback test</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, 'SF Pro Display', system-ui, sans-serif;
+      background: #0f0f1a;
+      color: #ffffff;
+    }
+
+    section.slide {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 5rem;
+      text-align: center;
+    }
+
+    section.slide:not(:first-child) { display: none; }
+
+    aside.notes { display: none; }
+
+    h1 {
+      font-size: clamp(2.5rem, 7vw, 5.5rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 1.5rem;
+    }
+
+    h2 {
+      font-size: clamp(2rem, 5vw, 4rem);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      margin-bottom: 1.5rem;
+    }
+
+    p {
+      font-size: clamp(1.1rem, 2.5vw, 1.75rem);
+      opacity: 0.65;
+      line-height: 1.6;
+      max-width: 42ch;
+    }
+
+    .accent {
+      background: linear-gradient(135deg, #5eb8ff, #b464dc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .label {
+      font-size: clamp(0.75rem, 1.5vw, 1rem);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #5eb8ff;
+      margin-bottom: 1rem;
+    }
+
+    .slide-list {
+      text-align: left;
+      max-width: 700px;
+    }
+
+    .slide-list ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .slide-list li {
+      font-size: clamp(1rem, 2.2vw, 1.5rem);
+      opacity: 0.8;
+      line-height: 1.5;
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+
+    .slide-list li .num {
+      color: #5eb8ff;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- SLIDE 1 — Title (aside fallback test) -->
+  <section class="slide">
+    <div class="label">Fallback test · aside</div>
+    <h1>AI Tools for Teachers<br><span class="accent">5 Things That Actually Work</span></h1>
+    <p>Jan Jílek · jilekai.cz</p>
+    <aside class="notes">
+      Welcome everyone — glad you're here. Quick intro: I'm Jan, I work with schools and teachers on AI adoption.
+      This isn't a theoretical talk. Everything I'll show you today, I've tested in real classrooms.
+      We have about 25 minutes — plenty of time for questions at the end. Let's get into it.
+    </aside>
+  </section>
+
+  <!-- SLIDE 2 — The real problem -->
+  <section class="slide">
+    <div class="label">The Problem</div>
+    <h2>Teachers don't have time.<br>AI promises to fix that.<br><span class="accent">But most tools don't.</span></h2>
+    <aside class="notes">
+      Let's be honest — the AI hype is real, but most tools waste time rather than save it.
+      You've probably tried ChatGPT and found yourself spending 20 minutes getting something you could've written in 5.
+      That's not a you problem. It's a workflow problem. Today I'll show you what actually sticks.
+      Pause here — ask: "Who has already used AI for lesson prep?" (get a feel for the room)
+    </aside>
+  </section>
+
+  <!-- SLIDE 3 — The 5 things -->
+  <section class="slide slide-list">
+    <div class="label">The 5 Things</div>
+    <h2 style="text-align:left; margin-bottom:2rem;">What actually saves time:</h2>
+    <ul>
+      <li><span class="num">1.</span> Generating first drafts of worksheets</li>
+      <li><span class="num">2.</span> Turning long texts into student summaries</li>
+      <li><span class="num">3.</span> Writing differentiated versions of tasks</li>
+      <li><span class="num">4.</span> Creating quiz questions from any material</li>
+      <li><span class="num">5.</span> Explaining concepts in multiple ways</li>
+    </ul>
+    <aside class="notes">
+      Walk through each point briefly — don't go deep yet, just name them.
+      The goal here is to give people a mental map before we dive into demos.
+      Key message: none of these replace the teacher's judgment. AI handles the mechanical work, you handle the thinking.
+      If someone looks skeptical on point 3, note their face — come back to them during the demo.
+    </aside>
+  </section>
+
+  <!-- No <script id="presenter-notes"> here — tests the aside fallback path -->
+
+</body>
+</html>

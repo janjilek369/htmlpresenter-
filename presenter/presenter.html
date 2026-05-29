@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HTMLpresenter</title>
+  <link rel="stylesheet" href="presenter.css">
+</head>
+<body>
+
+<div class="presenter">
+
+  <!-- HEADER BAR -->
+  <header class="header">
+    <div class="header__logo">
+      <div class="header__logo-dot"></div>
+      HTMLpresenter
+    </div>
+
+    <div class="header__counter" id="slide-counter">
+      Slide — / —
+    </div>
+
+    <div class="header__right">
+      <div class="header__timer header__timer--running" id="timer">
+        <span class="header__timer-icon">⏱</span>
+        <span id="timer-display">00:00</span>
+      </div>
+      <button class="btn-secondary btn-icon" id="btn-theme"
+              title="Switch to light mode" aria-label="Toggle theme"></button>
+    </div>
+  </header>
+
+  <!-- RECOVERY DIALOG (shown when a recoverable session is found) -->
+  <div class="recovery-overlay" id="recovery-overlay" hidden>
+    <div class="recovery-dialog glass-panel glass-panel--strong">
+      <div class="recovery-dialog__icon">↩</div>
+      <h2 class="recovery-dialog__title">Continue where you left off?</h2>
+      <p class="recovery-dialog__meta" id="recovery-meta">Slide — · —</p>
+      <div class="recovery-dialog__actions">
+        <button class="btn-secondary" id="btn-recovery-fresh">Start fresh</button>
+        <button class="btn-primary" id="btn-recovery-continue">Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FORMAT TOOLBAR (visible only in edit mode) -->
+  <div class="format-toolbar" id="format-toolbar" hidden>
+    <button class="fmt-btn" id="fmt-bold" title="Bold (⌘B)"><strong>B</strong></button>
+    <button class="fmt-btn" id="fmt-italic" title="Italic (⌘I)"><em>I</em></button>
+    <div class="format-toolbar__sep"></div>
+    <span class="format-toolbar__hint">⌘B · ⌘I · Esc to cancel</span>
+    <div class="format-toolbar__spacer"></div>
+    <button class="fmt-btn fmt-btn--done" id="fmt-done">Done</button>
+  </div>
+
+  <!-- NOTES PANEL -->
+  <div class="notes-panel glass-panel notes-panel--empty" id="notes-panel">
+    No notes for this slide.
+  </div>
+
+  <!-- CONTROLS BAR -->
+  <div class="controls">
+    <div class="controls__group">
+      <button class="btn-secondary btn-icon" id="btn-font-decrease" title="Decrease font size">A−</button>
+      <button class="btn-secondary btn-icon" id="btn-font-increase" title="Increase font size">A+</button>
+      <button class="btn-secondary" id="btn-edit" title="Edit notes">Edit</button>
+      <button class="btn-secondary" id="btn-export" title="Export HTML with notes">Export HTML</button>
+    </div>
+    <div class="controls__group">
+      <button class="btn-secondary" id="btn-timer-toggle" title="Pause/Resume timer">⏸ Pause</button>
+    </div>
+  </div>
+
+  <!-- FOOTER — THUMBNAILS -->
+  <footer class="footer">
+    <div class="thumbnail glass-panel" id="thumbnail-current">
+      <span class="thumbnail__label">Current</span>
+      <div class="thumbnail__frame-wrapper" id="thumb-current-wrapper">
+        <iframe id="thumb-current-iframe" scrolling="no" tabindex="-1"
+                title="Current slide preview"></iframe>
+      </div>
+    </div>
+    <div class="thumbnail glass-panel" id="thumbnail-next">
+      <span class="thumbnail__label thumbnail__label--next">Next</span>
+      <div class="thumbnail__frame-wrapper" id="thumb-next-wrapper">
+        <iframe id="thumb-next-iframe" scrolling="no" tabindex="-1"
+                title="Next slide preview"></iframe>
+        <div class="thumbnail__end" id="thumb-next-end">End of presentation</div>
+      </div>
+    </div>
+  </footer>
+
+</div>
+
+<script src="presenter.js"></script>
+</body>
+</html>

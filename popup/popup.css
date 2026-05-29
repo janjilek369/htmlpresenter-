@@ -1,0 +1,115 @@
+/* popup.css — Minimal popup styling, consistent with DESIGN.md tokens */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  width: 280px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Geist', system-ui, sans-serif;
+  font-size: 14px;
+  background: #12121a;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.popup {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.popup__logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.popup__logo-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #5eb8ff;
+  box-shadow: 0 0 8px rgba(94, 184, 255, 0.5);
+}
+
+.popup__body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.popup__status {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.65);
+  line-height: 1.5;
+}
+
+.popup__status strong {
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 500;
+}
+
+.popup__status--success {
+  color: #34d399;
+}
+
+.popup__status--active {
+  color: #5eb8ff;
+}
+
+.popup__slide-count {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.popup__btn {
+  width: 100%;
+  padding: 10px 16px;
+  background: rgba(94, 184, 255, 0.12);
+  color: #5eb8ff;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 200ms ease;
+  letter-spacing: -0.02em;
+}
+
+.popup__btn:hover {
+  background: #5eb8ff;
+  color: white;
+  box-shadow: 0 0 24px rgba(94, 184, 255, 0.35);
+}
+
+.popup__btn:active {
+  transform: scale(0.97);
+}
+
+.popup__btn--stop {
+  background: rgba(248, 113, 113, 0.1);
+  color: #f87171;
+}
+
+.popup__btn--stop:hover {
+  background: #f87171;
+  color: white;
+  box-shadow: 0 0 24px rgba(248, 113, 113, 0.35);
+}
+
+.popup__tip {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.25);
+  text-align: center;
+}
+
+.popup__divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.06);
+}
