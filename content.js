@@ -105,6 +105,10 @@ function extractAndRemoveNotes(slideEl, index, jsonNotes) {
  * Run slide detection and populate the module-level `slides` array.
  */
 function initSlides() {
+  // Guard: remove stale controlled flag that may have survived a crash or
+  // a hard reload while presenter mode was active.
+  document.body.removeAttribute('data-htmlpresenter-controlled');
+
   const elements = findSlideElements();
   if (elements.length === 0) {
     console.log(`${LOG} no slides detected on this page`);
@@ -175,6 +179,8 @@ function removeAudienceCSS() {
  */
 function enterAudienceMode(startIndex = 0) {
   presenterActive = true;
+  // Signal to standalone presentation JS that presenter has control
+  document.body.setAttribute('data-htmlpresenter-controlled', '');
   injectAudienceCSS();
   showSlide(startIndex);
   console.log(`${LOG} audience mode active — showing slide ${startIndex + 1} / ${slides.length}`);
@@ -185,6 +191,8 @@ function enterAudienceMode(startIndex = 0) {
  */
 function exitAudienceMode() {
   presenterActive = false;
+  // Release control — standalone JS may resume
+  document.body.removeAttribute('data-htmlpresenter-controlled');
   slides.forEach(({ element }) => {
     element.removeAttribute('data-htmlpresenter-active');
   });
