@@ -171,19 +171,56 @@ document.getElementById('btn-recovery-fresh').addEventListener('click', async ()
 // ─── Notes panel ─────────────────────────────────────────────────────────────
 
 /**
+ * Sanitize an HTML string to only allowed formatting tags, stripping
+ * all attributes and any tags not on the allowlist (script, iframe, etc.).
+ * Uses DOMParser so the browser does the heavy lifting — no regex hacks.
+ * @param {string} html  Raw HTML from JSON notes or live edit session.
+ * @returns {string}     Safe HTML ready for innerHTML assignment.
+ */
+function sanitizeNotes(html) {
+  const ALLOWED = ['STRONG', 'B', 'EM', 'I', 'U', 'BR', 'P', 'UL', 'OL', 'LI', 'SPAN'];
+  const doc = new DOMParser().parseFromString(`<div>${html}</div>`, 'text/html');
+  const root = doc.body.firstChild;
+
+  function walk(node) {
+    // Iterate a static copy — the live NodeList shifts as we mutate
+    for (const child of Array.from(node.childNodes)) {
+      if (child.nodeType !== 1) continue; // keep text nodes as-is
+      if (!ALLOWED.includes(child.tagName)) {
+        // Unwrap: move children out, then remove the disallowed tag itself
+        while (child.firstChild) node.insertBefore(child.firstChild, child);
+        node.removeChild(child);
+      } else {
+        // Strip every attribute (onclick, style, onerror …)
+        while (child.attributes.length > 0) {
+          child.removeAttribute(child.attributes[0].name);
+        }
+        walk(child);
+      }
+    }
+  }
+
+  walk(root);
+  return root.innerHTML;
+}
+
+/**
  * Render the notes for the given slide index.
- * Checks sessionEdits first (formatted HTML), then falls back to plain text.
+ * Checks sessionEdits first (formatted HTML), then falls back to original notes.
+ * All HTML is passed through sanitizeNotes before being set as innerHTML.
  * @param {number} index
  */
 function renderNotes(index) {
   if (index in sessionEdits) {
-    // Edited version — store as HTML to preserve bold/italic
-    notesPanelEl.innerHTML = sessionEdits[index];
-    notesPanelEl.classList.toggle('notes-panel--empty', sessionEdits[index].trim() === '');
+    // Live-edited version — already HTML from contenteditable; sanitize for safety
+    const safe = sanitizeNotes(sessionEdits[index]);
+    notesPanelEl.innerHTML = safe;
+    notesPanelEl.classList.toggle('notes-panel--empty', safe.trim() === '');
   } else {
     const text = notes[index] ?? '';
     if (text) {
-      notesPanelEl.textContent = text;
+      // Original notes may contain formatting tags from the JSON block
+      notesPanelEl.innerHTML = sanitizeNotes(text);
       notesPanelEl.classList.remove('notes-panel--empty');
     } else {
       notesPanelEl.textContent = 'No notes for this slide.';
