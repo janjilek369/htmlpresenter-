@@ -475,6 +475,7 @@ body {
   line-height: var(--leading-relaxed);
   color: var(--text-primary);
   letter-spacing: var(--tracking-tight);
+  white-space: pre-wrap; /* respect \n in JSON notes; word-wrap still applies */
 
   transition: font-size 150ms ease;
   cursor: default;
