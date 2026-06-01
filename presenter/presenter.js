@@ -543,6 +543,15 @@ notesPanelEl.addEventListener('keydown', (event) => {
     document.execCommand('italic');
     return;
   }
+  // Override browser's default Enter behaviour (inserts <div> or wraps in <div><br></div>
+  // depending on the browser, causing the first newline to silently disappear after
+  // sanitizeNotes strips div tags). A plain <br> is in the allowlist and round-trips
+  // correctly through save → sanitize → render.
+  if (event.key === 'Enter' && !event.shiftKey) {
+    event.preventDefault();
+    document.execCommand('insertHTML', false, '<br>');
+    return;
+  }
   if (event.key === 'Escape') {
     event.preventDefault();
     exitEditMode('cancel');
