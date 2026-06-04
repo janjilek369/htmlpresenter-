@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jak funguje HTMLpresenter</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #000000;
+    color: #ffffff;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  section.slide {
+    width: 100vw;
+    height: 100vh;
+    box-sizing: border-box;
+    padding: 8vh 10vw;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    background:
+      radial-gradient(ellipse 70% 60% at 15% 0%, rgba(94,184,255,.10), transparent 55%),
+      radial-gradient(ellipse 60% 50% at 90% 100%, rgba(94,184,255,.06), transparent 50%),
+      #000000;
+  }
+  section.slide:not(:first-child) { display: none; }
+
+  /* Mřížkové pozadí jako na webu */
+  section.slide::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(to right, rgba(255,255,255,.04) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px);
+    background-size: 80px 80px;
+    pointer-events: none;
+  }
+
+  .content { position: relative; z-index: 1; }
+
+  .eyebrow {
+    font-family: 'Geist Mono', monospace;
+    font-size: clamp(.75rem, 1.1vw, .95rem);
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: #5eb8ff;
+    margin-bottom: 2.5rem;
+  }
+
+  h1 {
+    font-size: clamp(2.5rem, 6.5vw, 5.5rem);
+    font-weight: 700;
+    line-height: 1.02;
+    letter-spacing: -.03em;
+    margin-bottom: 1.8rem;
+  }
+
+  h2 {
+    font-size: clamp(2rem, 4.5vw, 3.8rem);
+    font-weight: 600;
+    line-height: 1.08;
+    letter-spacing: -.02em;
+    margin-bottom: 2rem;
+  }
+
+  .accent { color: #5eb8ff; }
+
+  p.lead {
+    font-size: clamp(1.1rem, 1.9vw, 1.6rem);
+    line-height: 1.5;
+    color: rgba(255,255,255,.65);
+    max-width: 60ch;
+  }
+
+  .kicker {
+    display: inline-block;
+    font-family: 'Geist Mono', monospace;
+    font-size: clamp(3rem, 7vw, 6rem);
+    font-weight: 700;
+    color: #5eb8ff;
+    line-height: 1;
+    margin-bottom: 1.5rem;
+  }
+
+  ul.points {
+    list-style: none;
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.4rem;
+  }
+  ul.points li {
+    font-size: clamp(1.15rem, 2.1vw, 1.8rem);
+    line-height: 1.4;
+    color: rgba(255,255,255,.9);
+    padding-left: 2.2rem;
+    position: relative;
+  }
+  ul.points li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: .55em;
+    width: .7rem;
+    height: .7rem;
+    border-radius: 50%;
+    background: #5eb8ff;
+  }
+  ul.points li b { color: #ffffff; font-weight: 600; }
+
+  .cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    margin-top: 1rem;
+  }
+  .card {
+    background: rgba(255,255,255,.03);
+    border: 1px solid rgba(255,255,255,.10);
+    border-radius: 20px;
+    padding: 2.2rem;
+  }
+  .card .tag {
+    font-family: 'Geist Mono', monospace;
+    font-size: .8rem;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: #5eb8ff;
+    margin-bottom: 1rem;
+  }
+  .card h3 {
+    font-size: clamp(1.3rem, 2.2vw, 1.9rem);
+    font-weight: 600;
+    margin-bottom: .8rem;
+  }
+  .card p {
+    font-size: clamp(1rem, 1.5vw, 1.2rem);
+    color: rgba(255,255,255,.6);
+    line-height: 1.5;
+  }
+
+  .footer-tag {
+    position: absolute;
+    bottom: 4vh;
+    left: 10vw;
+    font-family: 'Geist Mono', monospace;
+    font-size: .85rem;
+    color: rgba(255,255,255,.35);
+    letter-spacing: .05em;
+    z-index: 1;
+  }
+
+  .key {
+    display: inline-block;
+    font-family: 'Geist Mono', monospace;
+    font-weight: 600;
+    background: rgba(94,184,255,.15);
+    border: 1px solid rgba(94,184,255,.4);
+    border-radius: 8px;
+    padding: .1em .5em;
+    color: #5eb8ff;
+  }
+</style>
+</head>
+<body>
+
+<section class="slide">
+  <div class="content">
+    <div class="eyebrow">Chrome Extension · Zdarma</div>
+    <h1>Jak funguje<br><span class="accent">HTMLpresenter</span></h1>
+    <p class="lead">Presenter view pro libovolnou HTML prezentaci. Poznámky, časomíra a náhledy slidů — jedním stiskem klávesy.</p>
+  </div>
+  <div class="footer-tag">htmlpresenter.vercel.app</div>
+</section>
+
+<section class="slide">
+  <div class="content">
+    <div class="eyebrow">Problém</div>
+    <h2>Webinář bez poznámek<br>je <span class="accent">stres.</span></h2>
+    <p class="lead">AI ti vygeneruje krásnou HTML prezentaci za minutu. Ale při webináři vidíš jen slidy. Žádné poznámky, žádná časomíra, žádný náhled dalšího slidu.</p>
+  </div>
+  <div class="footer-tag">htmlpresenter.vercel.app</div>
+</section>
+
+<section class="slide">
+  <div class="content">
+    <div class="kicker">P</div>
+    <h2>Stiskneš <span class="accent">P</span>.<br>Vyskočí dvě okna.</h2>
+    <ul class="points">
+      <li><b>Audience okno</b> — fullscreen prezentace, sdílíš na webináři</li>
+      <li><b>Presenter okno</b> — poznámky, časomíra, náhledy slidů, jen pro tebe</li>
+    </ul>
+  </div>
+  <div class="footer-tag">htmlpresenter.vercel.app</div>
+</section>
+
+<section class="slide">
+  <div class="content">
+    <div class="eyebrow">Co to umí</div>
+    <h2>Vše, co potřebuješ<br>na webinář.</h2>
+    <div class="cols">
+      <div class="card">
+        <div class="tag">Poznámky</div>
+        <h3>S formátováním</h3>
+        <p>Bullety, tučně, kurzíva. Klíčová slova vidíš periferně během prezentace.</p>
+      </div>
+      <div class="card">
+        <div class="tag">Časomíra</div>
+        <h3>Pod kontrolou</h3>
+        <p>Sleduj, jak dlouho mluvíš. Pause, reset. Žádné zírání na hodinky.</p>
+      </div>
+    </div>
+  </div>
+  <div class="footer-tag">htmlpresenter.vercel.app</div>
+</section>
+
+<section class="slide">
+  <div class="content">
+    <div class="eyebrow">Workflow</div>
+    <h2>Poznámky <span class="accent">upravuješ přes AI.</span></h2>
+    <p class="lead">Chceš změnit poznámku? Napiš AI, co chceš. Žádné editování v kódu, žádné speciální nástroje. Vrátíš se do Claude nebo ChatGPT a popíšeš změnu.</p>
+  </div>
+  <div class="footer-tag">htmlpresenter.vercel.app</div>
+</section>
+
+<section class="slide">
+  <div class="content">
+    <div class="eyebrow">Začni teď</div>
+    <h2>Tři kliknutí.<br><span class="accent">Bez účtu, bez platby.</span></h2>
+    <p class="lead">Přidej HTMLpresenter do Chrome, vygeneruj prezentaci v AI a stiskni P. Tak jednoduché to je.</p>
+  </div>
+  <div class="footer-tag">htmlpresenter.vercel.app</div>
+</section>
+
+<script type="application/json" id="presenter-notes">
+{
+  "0": "• <b>Přivítej</b> publikum, krátce se představ\n• Rámec: za <b>5 minut</b> jak HTMLpresenter funguje\n• Nech titulní slide chvíli vyznít",
+  "1": "• <b>Bolístka</b>, kterou každý zná\n• Zeptej se: kdo prezentoval HTML deck bez poznámek?\n• Pauza po slově <b>stres</b>",
+  "2": "• <b>Klíčový moment</b> — ukaž to naživo\n• Zdůrazni: audience sdílíš, presenter ne\n• Stisk <b>P</b> je celé kouzlo",
+  "3": "• Projdi obě karty <b>rychle</b>\n• Poznámky = největší výhoda\n• Časomíra řeší <b>timing</b> webináře",
+  "4": "• <b>Nejsilnější</b> diferenciátor\n• Ukaž příklad: 'uprav poznámku ke slidu 5'\n• Žádný editor, jen <b>konverzace</b>",
+  "5": "• <b>Výzva k akci</b> na závěr\n• Zdůrazni: zdarma, lokálně, bez sledování\n• Odkaz na <b>htmlpresenter.vercel.app</b>"
+}
+</script>
+
+<script>
+(function() {
+  let i = 0;
+  const slides = document.querySelectorAll('section.slide');
+  document.addEventListener('keydown', (e) => {
+    if (document.body.hasAttribute('data-htmlpresenter-controlled')) return;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      if (i < slides.length - 1) {
+        slides[i].style.display = 'none';
+        i++;
+        slides[i].style.display = 'flex';
+      }
+    }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      if (i > 0) {
+        slides[i].style.display = 'none';
+        i--;
+        slides[i].style.display = 'flex';
+      }
+    }
+  });
+})();
+</script>
+
+</body>
+</html>
