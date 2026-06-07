@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "HTMLpresenter",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Adds a presenter view to any HTML presentation opened in Chrome.",
 
   "action": {
@@ -37,9 +37,7 @@
   "permissions": [
     "storage",
     "activeTab",
-    "downloads",
-    "windows",
-    "tabs"
+    "windows"
   ],
 
   "host_permissions": ["<all_urls>"]
