@@ -94,6 +94,18 @@ Ve složce `test-presentations/` budou tyto soubory pro průběžné testování
 
 ---
 
+## Automatizované testy
+
+Ve složce `tests/` je test suite pro `background.js` (mockuje `chrome.*` API, žádné závislosti):
+
+```bash
+node tests/background.test.cjs
+```
+
+Pokrývá navigaci, hranice slidů, session recovery a hlavně **restart service workeru** (Chrome ho po ~30 s nečinnosti zabíjí) — stav se musí obnovit z `chrome.storage.session`, jinak přestane fungovat posouvání slidů. Spusť po každé změně `background.js`.
+
+---
+
 ## Convention pro načítání HTML do Chrome
 
 Existují 3 způsoby, jak Chrome otevře HTML soubor:

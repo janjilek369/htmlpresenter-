@@ -52,10 +52,23 @@ const state = {
 const BG_STATE_KEY = 'bg-state';
 
 /** Mirror the current state to chrome.storage.session (fire-and-forget). */
-function persistState() {
-  chrome.storage.session.set({ [BG_STATE_KEY]: state }).catch((err) => {
-    console.warn(`${LOG} state persist failed:`, err);
-  });
+async function persistState() {
+  try {
+    await chrome.storage.session.set({ [BG_STATE_KEY]: state });
+  } catch (err) {
+    // Most likely the quota (large slidesHTML, e.g. inline base64 images).
+    // Persist a light copy without the heavy fields — navigation still
+    // survives a worker restart; slide previews and notes live in the
+    // presenter window's own memory, which a worker restart doesn't touch.
+    try {
+      await chrome.storage.session.set({
+        [BG_STATE_KEY]: { ...state, slidesHTML: [], styles: '', notes: [] },
+      });
+      console.warn(`${LOG} full state too large — persisted light state (${err?.message})`);
+    } catch (err2) {
+      console.warn(`${LOG} state persist failed:`, err2);
+    }
+  }
 }
 
 /** Restore state from chrome.storage.session after a service worker restart. */
@@ -209,8 +222,24 @@ async function handleMessage(message, sender, sendResponse) {
     // ── Content script: user pressed P (or popup triggered start) ──────────
     case 'START_PRESENTER': {
       if (state.presenterActive) {
-        sendResponse({ ok: false, reason: 'already_active' });
-        return;
+        // Restored state can be stale: the presenter window may have vanished
+        // while the worker was dead (lost onRemoved event). Verify it still
+        // exists before refusing to start — otherwise P would be dead forever.
+        let windowAlive = false;
+        if (state.presenterWindowId !== null) {
+          try {
+            await chrome.windows.get(state.presenterWindowId);
+            windowAlive = true;
+          } catch {
+            // Window is gone — fall through to cleanup + fresh start
+          }
+        }
+        if (windowAlive) {
+          sendResponse({ ok: false, reason: 'already_active' });
+          return;
+        }
+        console.log(`${LOG} stale active state detected — resetting before start`);
+        await closePresenterMode();
       }
 
       state.presenterActive = true;
