@@ -40,6 +40,47 @@ const state = {
   intentionalStop: false,
 };
 
+// ─── State persistence (MV3 service worker survival) ─────────────────────────
+//
+// Chrome terminates an idle MV3 service worker after ~30 s. Without
+// persistence the in-memory `state` object is lost, the next CHANGE_SLIDE
+// wakes a fresh worker with presenterActive=false, and navigation silently
+// stops working until the user refreshes the presentation. To survive
+// termination, every state mutation is mirrored to chrome.storage.session
+// and restored before any message/event is handled.
+
+const BG_STATE_KEY = 'bg-state';
+
+/** Mirror the current state to chrome.storage.session (fire-and-forget). */
+function persistState() {
+  chrome.storage.session.set({ [BG_STATE_KEY]: state }).catch((err) => {
+    console.warn(`${LOG} state persist failed:`, err);
+  });
+}
+
+/** Restore state from chrome.storage.session after a service worker restart. */
+async function restoreState() {
+  try {
+    const result = await chrome.storage.session.get(BG_STATE_KEY);
+    if (result[BG_STATE_KEY]) {
+      Object.assign(state, result[BG_STATE_KEY]);
+      if (state.presenterActive) {
+        console.log(
+          `${LOG} state restored after service worker restart — slide ${state.currentSlideIndex + 1}/${state.slideCount}`
+        );
+      }
+    }
+  } catch (err) {
+    console.warn(`${LOG} state restore failed:`, err);
+  }
+}
+
+/**
+ * Resolved once the persisted state has been loaded. Every message and
+ * cleanup listener awaits this before touching `state`.
+ */
+const stateReady = restoreState();
+
 // ─── Window management ────────────────────────────────────────────────────────
 
 /**
@@ -140,12 +181,27 @@ async function closePresenterMode() {
   state.slidesHTML = [];
   state.presentationUrl = '';
   state.intentionalStop = false;
+  persistState();
   console.log(`${LOG} presenter mode closed`);
 }
 
 // ─── Message handler ──────────────────────────────────────────────────────────
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  // Always return true (async response): state must be restored from
+  // chrome.storage.session first in case the service worker just restarted.
+  handleMessage(message, sender, sendResponse);
+  return true;
+});
+
+/**
+ * Process one runtime message after persisted state has been restored.
+ * @param {object} message
+ * @param {chrome.runtime.MessageSender} sender
+ * @param {(response?: object) => void} sendResponse
+ */
+async function handleMessage(message, sender, sendResponse) {
+  await stateReady;
   console.log(`${LOG} [bg] message:`, message.type);
 
   switch (message.type) {
@@ -154,7 +210,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     case 'START_PRESENTER': {
       if (state.presenterActive) {
         sendResponse({ ok: false, reason: 'already_active' });
-        return false;
+        return;
       }
 
       state.presenterActive = true;
@@ -167,16 +223,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       state.presentationUrl = message.url ?? '';
       state.intentionalStop = false;
 
-      openPresenterWindow()
-        .then(() => sendResponse({ ok: true }))
-        .catch((err) => {
-          console.error(`${LOG} window create failed:`, err);
-          state.presenterActive = false;
-          state.audienceTabId = null;
-          state.presentationUrl = '';
-          sendResponse({ ok: false, reason: 'window_create_failed' });
-        });
-      return true;
+      try {
+        await openPresenterWindow();
+        persistState();
+        sendResponse({ ok: true });
+      } catch (err) {
+        console.error(`${LOG} window create failed:`, err);
+        state.presenterActive = false;
+        state.audienceTabId = null;
+        state.presentationUrl = '';
+        persistState();
+        sendResponse({ ok: false, reason: 'window_create_failed' });
+      }
+      return;
     }
 
     // ── Popup "Start Presenter" button — route to content script ───────────
@@ -184,7 +243,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       chrome.tabs.sendMessage(message.tabId, { type: 'TRIGGER_START' }, (response) => {
         sendResponse(response ?? { ok: false, reason: 'no_response' });
       });
-      return true;
+      return;
     }
 
     // ── Content script or presenter window: intentional stop ──────────────
@@ -197,17 +256,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           .remove(`session:${state.presentationUrl}`)
           .catch(() => {});
       }
-      closePresenterMode()
-        .then(() => sendResponse({ ok: true }))
-        .catch(() => sendResponse({ ok: false }));
-      return true;
+      try {
+        await closePresenterMode();
+        sendResponse({ ok: true });
+      } catch {
+        sendResponse({ ok: false });
+      }
+      return;
     }
 
     // ── Navigation: content.js or presenter.js requested a slide change ───
     case 'CHANGE_SLIDE': {
       if (!state.presenterActive) {
         sendResponse({ ok: false, reason: 'not_active' });
-        return false;
+        return;
       }
 
       const { direction } = message;
@@ -219,25 +281,26 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       if (candidate < 0) {
         console.log(`${LOG} already at first slide`);
         sendResponse({ ok: false, reason: 'at_first' });
-        return false;
+        return;
       }
       if (candidate >= state.slideCount) {
         console.log(`${LOG} already at last slide`);
         sendResponse({ ok: false, reason: 'at_last' });
-        return false;
+        return;
       }
 
       state.currentSlideIndex = candidate;
+      persistState();
       // Broadcast to both windows — fire-and-forget, no need to await
       broadcastSlideChange(candidate);
       sendResponse({ ok: true, newIndex: candidate });
-      return false;
+      return;
     }
 
     // ── Popup: what is the current state? ──────────────────────────────────
     case 'GET_STATE': {
       sendResponse({ ...state });
-      return false;
+      return;
     }
 
     // ── Presenter window has loaded — give it the initial data ─────────────
@@ -251,16 +314,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         slidesHTML: state.slidesHTML,
         url: state.presentationUrl,
       });
-      return false;
+      return;
     }
 
     // ── Presenter recovered a session — sync audience to the right slide ────
     case 'RESUME_AT': {
       if (!state.presenterActive) {
         sendResponse({ ok: false });
-        return false;
+        return;
       }
       state.currentSlideIndex = message.index;
+      persistState();
       // Tell only the audience tab — presenter already has the correct state.
       if (state.audienceTabId !== null) {
         chrome.tabs.sendMessage(
@@ -269,12 +333,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         ).catch(() => {});
       }
       sendResponse({ ok: true });
-      return false;
+      return;
     }
-  }
 
-  return false;
-});
+    default:
+      // Unknown message — close the response port cleanly.
+      sendResponse();
+  }
+}
 
 // ─── Cleanup listeners ────────────────────────────────────────────────────────
 
@@ -282,7 +348,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 // Because closePresenterMode() nulls presenterWindowId BEFORE calling remove(),
 // the intentional-stop path produces presenterWindowId === null here → no match.
 // Only the × button (accidental) path reaches this with a live windowId.
-chrome.windows.onRemoved.addListener((windowId) => {
+chrome.windows.onRemoved.addListener(async (windowId) => {
+  await stateReady;
   if (windowId !== state.presenterWindowId) return;
 
   console.log(`${LOG} presenter window closed by × — session preserved for recovery`);
@@ -293,7 +360,8 @@ chrome.windows.onRemoved.addListener((windowId) => {
 });
 
 // Audience tab closed while presenter mode is active
-chrome.tabs.onRemoved.addListener((tabId) => {
+chrome.tabs.onRemoved.addListener(async (tabId) => {
+  await stateReady;
   if (tabId === state.audienceTabId) {
     console.log(`${LOG} audience tab closed — ending presenter mode`);
     closePresenterMode();
