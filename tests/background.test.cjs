@@ -332,6 +332,23 @@ async function test(name, fn) {
     assert.strictEqual(res.reason, 'already_active');
   });
 
+  await test('REGRESSION: rapid double P opens only ONE presenter window', async () => {
+    const env = createEnv();
+    const w = bootWorker(env);
+    // Held-down P auto-repeats: two STARTs in flight at once, neither awaited
+    const [r1, r2] = await Promise.all([
+      w.send(startMsg(), SENDER),
+      w.send(startMsg(), SENDER),
+    ]);
+    const oks = [r1.ok, r2.ok].filter(Boolean).length;
+    assert.strictEqual(oks, 1, 'exactly one START must succeed');
+    assert.strictEqual(w.calls.windowsCreated.length, 1, 'only one window created');
+    assert.strictEqual(env.openWindows.size, 1, 'only one window exists');
+    // And navigation works normally afterwards
+    const nav = await w.send({ type: 'CHANGE_SLIDE', direction: 'next' });
+    assert.deepStrictEqual(clone(nav), { ok: true, newIndex: 1 });
+  });
+
   await test('HARDENING: stale active state (window vanished) does not block P', async () => {
     const env = createEnv();
     const w1 = bootWorker(env);

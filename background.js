@@ -40,6 +40,13 @@ const state = {
   intentionalStop: false,
 };
 
+/**
+ * True while a START_PRESENTER request is opening its window. In-memory only
+ * (a worker restart mid-open is harmless) — guards against a second START
+ * racing the first before presenterWindowId is known.
+ */
+let startingPresenter = false;
+
 // ─── State persistence (MV3 service worker survival) ─────────────────────────
 //
 // Chrome terminates an idle MV3 service worker after ~30 s. Without
@@ -221,6 +228,17 @@ async function handleMessage(message, sender, sendResponse) {
 
     // ── Content script: user pressed P (or popup triggered start) ──────────
     case 'START_PRESENTER': {
+      // A second START can arrive while the first is still opening its window
+      // (held-down P auto-repeats, double-press). At that moment
+      // presenterWindowId is still null, so the stale-state check below would
+      // wrongly conclude the window vanished and open a SECOND presenter.
+      // The in-memory flag closes that race — within one worker lifetime only
+      // one START can be in flight.
+      if (startingPresenter) {
+        sendResponse({ ok: false, reason: 'already_active' });
+        return;
+      }
+
       if (state.presenterActive) {
         // Restored state can be stale: the presenter window may have vanished
         // while the worker was dead (lost onRemoved event). Verify it still
@@ -242,6 +260,7 @@ async function handleMessage(message, sender, sendResponse) {
         await closePresenterMode();
       }
 
+      startingPresenter = true;
       state.presenterActive = true;
       state.audienceTabId = sender.tab.id;
       state.currentSlideIndex = 0;
@@ -263,6 +282,8 @@ async function handleMessage(message, sender, sendResponse) {
         state.presentationUrl = '';
         persistState();
         sendResponse({ ok: false, reason: 'window_create_failed' });
+      } finally {
+        startingPresenter = false;
       }
       return;
     }
